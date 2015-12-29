@@ -19,9 +19,15 @@ import java.net.SocketTimeoutException;
 public class MainActivity extends AppCompatActivity {
 
     EditText socket_edit;
+    EditText ssid_edit;
+    Button ssid_btn;
     Button socket_btn;
+    OutputStream out =null;
     private static final String Host ="10.10.10.254";
     private static final int Port =6602;
+    Socket socket =null;
+    Message msg =null;
+    Bundle bundle;
 
     public Handler myhandler = new Handler(){
         @Override
@@ -42,6 +48,33 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    public static String getCheckNumber(String paramString){
+        int i =paramString.substring(0, 1).getBytes()[0];
+        for(int j=1;;j++){
+            if(j>=paramString.length())
+                return intToHex(Integer.valueOf(i));
+            i=(byte)(i^paramString.substring(j, j+1).getBytes()[0]);
+
+        }
+    }
+    public static String intToHex(Integer paramInteger){
+        return Integer.toHexString((paramInteger.intValue()&0x000000FF)|0xFFFFFF00).substring(6);
+
+    }
+
+    public static String CombineCommand(String paramString1,String paramString2,String paramString3,String paramString4,String paramString5,String paramString6){
+        String str1 = intToHex(Integer.valueOf((4+(2+(paramString1.length()+paramString2.length()+paramString3.length()+paramString4.length()))+paramString5.length())));
+        String str2 = "00"+intToHex(Integer.valueOf(Integer.valueOf(2 + (4 + (2 + (paramString1.length() + paramString2.length() + paramString3.length() + paramString4.length())) + paramString5.length() + paramString6.length()))));
+        String str3 = getCheckNumber(paramString1.toUpperCase()+paramString2+paramString3+paramString4+str1.toUpperCase()+str2.toUpperCase()+paramString5+paramString6);
+        if(str3.length()<1);
+        while(true){
+            return paramString1.toUpperCase()+paramString2+paramString3+paramString4+str1.toUpperCase()+str2.toUpperCase()+paramString5+paramString6+str3.toUpperCase();
+        }
+
+
+
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,24 +82,32 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         socket_edit =(EditText)findViewById(R.id.socket_edit);
         socket_btn =(Button)findViewById(R.id.socket_btn);
+        ssid_edit = (EditText)findViewById(R.id.ssid_edit);
+        ssid_btn = (Button)findViewById(R.id.socket_btn);
+        msg = new Message();
+        bundle =new Bundle();
         socket_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                SocketThread socketThread = new SocketThread(Host,Port);
-                new Thread(socketThread).start();
+
+
+                    SocketThread socketThread = new SocketThread(Host, Port);
+                    new Thread(socketThread).start();
+
 
             }
         });
+
+
 
     }
 
     public class SocketThread implements Runnable{
 
-        Socket socket =null;
+
         private String host;
         private int port;
-        private String str ="FFFE0104011200140001";
 
         public SocketThread(String host,int port){
             this.host = host;
@@ -76,21 +117,20 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
 
-            Message msg =MainActivity.this.myhandler.obtainMessage();
-            Bundle bundle = new Bundle();
-            bundle.clear();
+            MainActivity.this.msg =MainActivity.this.myhandler.obtainMessage();
+            MainActivity.this.bundle.clear();
 
             try{
-                socket = new Socket();
-                socket.connect(new InetSocketAddress(host,port),5000);
+                MainActivity.this.socket = new Socket();
+                MainActivity.this.socket.connect(new InetSocketAddress(host, port), 5000);
 
 
             }catch (SocketTimeoutException aa){
 
-                msg.what=2;
-                bundle.putString("msg","put check network open");
-                msg.setData(bundle);
-                msg.sendToTarget();
+                MainActivity.this.msg.what=2;
+                MainActivity.this.bundle.putString("msg","put check network open");
+                MainActivity.this.msg.setData(bundle);
+                MainActivity.this.msg.sendToTarget();
 
             } catch (IOException localIOException){
 
@@ -99,20 +139,22 @@ public class MainActivity extends AppCompatActivity {
             }
 
 
-                if (!socket.isClosed()) {
-                    if (socket.isConnected()) {
-                        msg.what = 1;
-                        bundle.putString("msg","conncet is ok");
-                        msg.setData(bundle);
-                        msg.sendToTarget();
+                if (!MainActivity.this.socket.isClosed()) {
+                    if (MainActivity.this.socket.isConnected()) {
+                        MainActivity.this.msg.what = 1;
+                        MainActivity.this.bundle.putString("msg","conncet is ok");
+                        MainActivity.this.msg.setData(bundle);
+                        MainActivity.this.msg.sendToTarget();
                         try{
-                            OutputStream out = socket.getOutputStream();
+                            MainActivity.this.out = socket.getOutputStream();
 //                            PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(
 //                                    socket.getOutputStream())), true);
                             BufferedReader bff = new BufferedReader(new InputStreamReader(
                                     socket.getInputStream()));
-                            out.write(str.getBytes());
-                            out.flush();
+                            String str = CombineCommand("FFFE", "01", "04", "11", "00", "{\"SSID\":\""+Integer.toString(20)+"\"}");
+                            MainActivity.this.out.write(str.getBytes());
+                            MainActivity.this.out.flush();
+
 
                         }catch (IOException localIOEception){
 

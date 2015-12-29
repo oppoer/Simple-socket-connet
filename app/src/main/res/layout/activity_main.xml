@@ -21,4 +21,20 @@
         android:text="socket_btn"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true" />
+    <EditText
+        android:id="@+id/ssid_edit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/socket_btn"
+        android:text="20"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"/>
+    <Button
+        android:id="@+id/ssid_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/ssid_edit"
+        android:text="SSID_BTN"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
 </RelativeLayout>
